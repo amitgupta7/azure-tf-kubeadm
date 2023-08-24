@@ -133,6 +133,11 @@ resource "null_resource" "install_dependencies" {
   }
 
   provisioner "file" {
+    source = "license.yaml"
+    destination = "/home/${var.azuser}/license.yaml"
+  }
+
+  provisioner "file" {
     source = "appliance_init.tpl"
     destination = "/home/${var.azuser}/appliance_init.tpl"
   }
