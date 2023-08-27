@@ -95,9 +95,12 @@ resource "azurerm_linux_virtual_machine" "podvms" {
     sku       = var.os_sku
     version   = var.os_version
   }
-  admin_username                  = var.azuser
-  admin_password                  = var.azpwd
-  disable_password_authentication = false
+
+  admin_username = var.azuser
+  admin_ssh_key {
+    username = var.azuser
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
 }
 
 # Generate bootstrap token
@@ -128,9 +131,15 @@ resource "null_resource" "install_dependencies" {
   connection {
     type     = "ssh"
     user     = var.azuser
-    password = var.azpwd
+    private_key = file("~/.ssh/id_rsa")
     host     = azurerm_public_ip.pod_ip[each.key].fqdn
   }
+
+
+  provisioner "file" {
+    source = "kAlias"
+    destination = "/home/${var.azuser}/kAlias"
+  }  
 
   provisioner "file" {
     source = "license.yaml"
@@ -142,27 +151,25 @@ resource "null_resource" "install_dependencies" {
     destination = "/home/${var.azuser}/appliance_init.tpl"
   }
 
+  provisioner "file" {
+    count = each.value["role"]=="master"? 1: 0
+    source = "appliance_setup.sh"
+    destination = "/home/${var.azuser}/appliance_setup.sh"
+  }
+  
+
   provisioner "remote-exec" {
     inline = [
-      "sudo sh /home/${var.azuser}/appliance_init.tpl -v ${var.k8s_version} -t ${local.token} -h ${var.masterIp} -r ${each.value["role"]} | tee /home/${var.azuser}/install.log"
+      "echo 'source ~/kAlias' >> ~/.bashrc",  
+      "sudo sh /home/${var.azuser}/appliance_init.tpl -v ${var.k8s_version} -t ${local.token} -h ${var.masterIp} -r ${each.value["role"]} -g ${var.location} -k ${var.X_API_Key} -s ${var.X_API_Secret} -e ${var.X_TIDENT} | tee /home/${var.azuser}/install.log"
      ]
   }
 }
-
-
 
 output "hostnames" {
   value = values(azurerm_public_ip.pod_ip).*.fqdn
 }
 
-output "az_subscription_id" {
-  value = var.az_subscription_id
-}
-
-output "az_resource_group" {
-  value = var.az_resource_group
-}
-
-output "ssh_credentials" {
-  value = "${var.azuser}/${var.azpwd}"
+output "ssh_user" {
+  value = "${var.azuser}"
 }
