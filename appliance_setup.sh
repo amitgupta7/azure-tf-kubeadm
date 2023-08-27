@@ -11,11 +11,12 @@ do
 done
 
 install_epod(){
-kubectl kots install "securiti-scanner" --skip-preflights --license-file "license.yaml" --config-values "values.yaml" -n securiti --shared-password "securitiscanner" --wait-duration 10m --with-minio=false | tee scanner_install.log &
+kubectl kots install "securiti-scanner" --skip-preflights --license-file "license.yaml" --config-values "values.yaml" -n securiti --shared-password "securitiscanner" --wait-duration 10m --with-minio=false > securiti_epod_install.log 2>&1 &
+sleep 30
+kubectl delete pvc -n securiti kotsadm-rqlite-kotsadm-rqlite-0
+kubectl apply -f kots-rqlite.yaml
 
-echo "If the above operation times out, update PVCs  ## storageClassName: longhorn, and run register_appliance.sh script"
-
-cat <<EOF > register_appliance.sh
+sleep 20m
 CONFIG_CTRL_POD=$(kubectl get pods -A -o jsonpath='{.items[?(@.metadata.labels.app=="priv-appliance-config-controller")].metadata.name}')
 if [ -z "$CONFIG_CTRL_POD"]
 then
@@ -46,7 +47,6 @@ SAI_LICENSE=$(cat sai_appliance.txt| jq -r '.data.license')
 # register with Securiti Cloud
 kubectl exec -it "$CONFIG_CTRL_POD" -n "securiti" -- securitictl register -l "$SAI_LICENSE"
 echo "Registered to appliance id: $(cat sai_appliance.txt| jq -r '.data.id')"
-EOF
 }
 
 install_redis(){
@@ -60,11 +60,11 @@ install_redis(){
     helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --version 1.5.0
 
     REDIS_DEPLOYMENT_NAME=epod-ec
-    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn --set slave.persistence.storageClass=longhorn bitnami/redis 
+    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn bitnami/redis 
+    kubectl delete pvc redis-data-epod-ec-redis-replicas-0
+    kubectl apply -f redis-replica.yaml
     host=$REDIS_DEPLOYMENT_NAME-redis-master.default.svc.cluster.local
-    password=$(kubectl get secret --namespace default $REDIS_DEPLOYMENT_NAME-redis -o jsonpath="{.data.redis-password}" | base64 -d)
-    echo $host >> redis.host
-    echo $password >> redis.pass    
+    password=$(kubectl get secret --namespace default $REDIS_DEPLOYMENT_NAME-redis -o jsonpath="{.data.redis-password}" | base64 -d)  
     cat <<CONFIGVALS >values.yaml
 apiVersion: kots.io/v1beta1
 kind: ConfigValues
