@@ -15,7 +15,6 @@ kubectl kots install "securiti-scanner" --skip-preflights --license-file "licens
 sleep 30
 kubectl delete pvc -n securiti kotsadm-rqlite-kotsadm-rqlite-0
 kubectl apply -f kots-rqlite.yaml
-
 sleep 5m
 CONFIG_CTRL_POD=$(kubectl get pods -A -o jsonpath='{.items[?(@.metadata.labels.app=="priv-appliance-config-controller")].metadata.name}')
 if [[ -z "$CONFIG_CTRL_POD"]]; then
