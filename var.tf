@@ -11,10 +11,6 @@ variable "azuser" {
   default = "azuser"
 }
 
-variable "azpwd" {
-  description = "common vm password, 16 characters containg --> [chars-alpha-num-special-char]"
-}
-
 variable "vm_size" {
   default = "Standard_D8s_v3"
 }
@@ -75,4 +71,19 @@ variable "masterIp" {
 variable "k8s_version" {
   type = string
   default = "1.24.16"
+}
+
+variable "X_API_Secret" {
+  type        = string
+  description = "SAI API secret"
+}
+  
+variable "X_API_Key" {
+  type        = string
+  description = "SAI API key"
+}
+
+variable "X_TIDENT" {
+  type        = string
+  description = "SAI Tenant ID"
 }
