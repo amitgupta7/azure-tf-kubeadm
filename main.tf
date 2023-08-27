@@ -152,7 +152,6 @@ resource "null_resource" "install_dependencies" {
   }
 
   provisioner "file" {
-    count = each.value["role"]=="master"? 1: 0
     source = "appliance_setup.sh"
     destination = "/home/${var.azuser}/appliance_setup.sh"
   }
