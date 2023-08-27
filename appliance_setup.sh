@@ -11,7 +11,7 @@ do
 done
 
 install_epod(){
-    kubectl kots install "securiti-scanner" --skip-preflights --license-file "license.yaml" --config-values "values.yaml" -n securiti --shared-password "securitiscanner" --wait-duration 10m --with-minio=false | tee scanner_install.log &
+kubectl kots install "securiti-scanner" --skip-preflights --license-file "license.yaml" --config-values "values.yaml" -n securiti --shared-password "securitiscanner" --wait-duration 10m --with-minio=false | tee scanner_install.log &
 
 echo "If the above operation times out, update PVCs  ## storageClassName: longhorn, and run register_appliance.sh script"
 
@@ -60,7 +60,7 @@ install_redis(){
     helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --version 1.5.0
 
     REDIS_DEPLOYMENT_NAME=epod-ec
-    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn bitnami/redis 
+    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn --set slave.persistence.storageClass=longhorn bitnami/redis 
     host=$REDIS_DEPLOYMENT_NAME-redis-master.default.svc.cluster.local
     password=$(kubectl get secret --namespace default $REDIS_DEPLOYMENT_NAME-redis -o jsonpath="{.data.redis-password}" | base64 -d)
     echo $host >> redis.host
@@ -85,3 +85,4 @@ spec:
 CONFIGVALS
 }
 install_redis
+install_epod
