@@ -136,6 +136,18 @@ resource "null_resource" "install_dependencies" {
   }
 
 
+
+
+  provisioner "file" {
+    source = "redis-replica.yaml"
+    destination = "/home/${var.azuser}/redis-replica.yaml"
+  }  
+
+    provisioner "file" {
+    source = "kots-rqlite.yaml"
+    destination = "/home/${var.azuser}/kots-rqlite.yaml"
+  }  
+
   provisioner "file" {
     source = "kAlias"
     destination = "/home/${var.azuser}/kAlias"
