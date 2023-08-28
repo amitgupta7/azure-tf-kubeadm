@@ -15,6 +15,8 @@ kubectl kots install "securiti-scanner" --skip-preflights --license-file "licens
 sleep 30
 kubectl delete pvc -n securiti kotsadm-rqlite-kotsadm-rqlite-0
 kubectl apply -f kots-rqlite.yaml
+sleep 30
+kubectl get pvc -A
 sleep 5m
 CONFIG_CTRL_POD=$(kubectl get pods -A -o jsonpath='{.items[?(@.metadata.labels.app=="priv-appliance-config-controller")].metadata.name}')
 if [[ -z "$CONFIG_CTRL_POD"]]; then
@@ -47,7 +49,7 @@ kubectl exec -it "$CONFIG_CTRL_POD" -n "securiti" -- securitictl register -l "$S
 echo "Registered to appliance id: $(cat sai_appliance.txt| jq -r '.data.id')"
 }
 
-install_redis(){
+install_statefulsets(){
     kubectl taint nodes --all node-role.kubernetes.io/master-
     kubectl taint nodes --all node-role.kubernetes.io/control-plane-
     kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml    
@@ -58,11 +60,31 @@ install_redis(){
     helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --version 1.5.0
 
     REDIS_DEPLOYMENT_NAME=epod-ec
-    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn bitnami/redis 
+    POSTGRES_DEPLOYMENT_NAME=epod-pg
+    ELASTICSEARCH_DEPLOYMENT_NAME=epod-es
+    helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn bitnami/redis --version "16.13.2"
+    helm install $POSTGRES_DEPLOYMENT_NAME --set persistence.storageClass=longhorn bitnami/postgresql --version "11.9.13"
+    helm install $ELASTICSEARCH_DEPLOYMENT_NAME bitnami/elasticsearch --version "18.2.16"
+    #helm install $REDIS_DEPLOYMENT_NAME --set master.persistence.storageClass=longhorn bitnami/redis 
     kubectl delete pvc redis-data-epod-ec-redis-replicas-0
+    kubectl delete pvc data-epod-pg-postgresql-0
     kubectl apply -f redis-replica.yaml
-    host=$REDIS_DEPLOYMENT_NAME-redis-master.default.svc.cluster.local
-    password=$(kubectl get secret --namespace default $REDIS_DEPLOYMENT_NAME-redis -o jsonpath="{.data.redis-password}" | base64 -d)  
+    kubectl apply -f postgres-data.yml
+
+    kubectl delete pvc data-epod-es-elasticsearch-data-0
+    kubectl delete pvc data-epod-es-elasticsearch-data-1
+    kubectl delete pvc data-epod-es-elasticsearch-master-0
+    kubectl delete pvc data-epod-es-elasticsearch-master-1
+    kubectl apply -f es-data0.yaml  
+    kubectl apply -f es-data1.yaml  
+    kubectl apply -f es-master0.yaml  
+    kubectl apply -f es-master1.yaml
+
+    ec_host=$REDIS_DEPLOYMENT_NAME-redis-master.default.svc.cluster.local
+    ec_password=$(kubectl get secret --namespace default $REDIS_DEPLOYMENT_NAME-redis -o jsonpath="{.data.redis-password}" | base64 -d)  
+    pg_password=$(kubectl get secret --namespace default $POSTGRES_DEPLOYMENT_NAME-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
+    pg_host=$POSTGRES_DEPLOYMENT_NAME-postgresql.default.svc.cluster.local
+    es_host=$ELASTICSEARCH_DEPLOYMENT_NAME-elasticsearch.default.svc.cluster.local
     cat <<CONFIGVALS >values.yaml
 apiVersion: kots.io/v1beta1
 kind: ConfigValues
@@ -71,16 +93,26 @@ metadata:
 spec:
   values:
     redis_host:
-        value: "$host"
+        value: "$ec_host"
     redis_password:
-        value: "$password"
+        value: "$ec_password"
     use_redis_ssl:
         value: "0"
     region:
       value: $region
     install_dir:
        value: "/var/lib/"
+    enable_external_postgres:
+        value: "1"
+    postgres_host:
+        value: "$pg_host"
+    postgres_password:
+        value: "$pg_password"
+    enable_external_es:
+        value: "1"
+    es_host:
+        value: "$es_host"
 CONFIGVALS
 }
-install_redis
+install_statefulsets
 install_epod

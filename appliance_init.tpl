@@ -21,6 +21,11 @@ install_basics(){
     snap install jq
 }
 
+pre_flight_mods(){
+  sysctl -w vm.max_map_count=262144 >/dev/null
+  echo 'vm.max_map_count=262144' >> etc/sysctl.conf
+}
+
 main(){
   apt-get update
   apt-get install -y apt-transport-https curl
@@ -53,6 +58,7 @@ install_worker(){
 }
 
 install_basics
+pre_flight_mods
 main
 if [ "$role" = "master" ]; then
   install_master

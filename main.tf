@@ -135,13 +135,33 @@ resource "null_resource" "install_dependencies" {
     host     = azurerm_public_ip.pod_ip[each.key].fqdn
   }
 
+  provisioner "file" {
+    source = "es-data0.yaml"
+    destination = "/home/${var.azuser}/es-data0.yaml"
+  }
+  provisioner "file" {
+    source = "es-data1.yaml"
+    destination = "/home/${var.azuser}/es-data1.yaml"
+  }
+  provisioner "file" {
+    source = "es-master0.yaml"
+    destination = "/home/${var.azuser}/es-master0.yaml"
+  }
+  provisioner "file" {
+    source = "es-master1.yaml"
+    destination = "/home/${var.azuser}/es-master1.yaml"
+  }
 
-
+  provisioner "file" {
+    source = "postgres-data.yml"
+    destination = "/home/${var.azuser}/postgres-data.yml"
+  } 
 
   provisioner "file" {
     source = "redis-replica.yaml"
     destination = "/home/${var.azuser}/redis-replica.yaml"
   }  
+  
 
     provisioner "file" {
     source = "kots-rqlite.yaml"

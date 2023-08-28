@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: "2023-08-28T12:17:40Z"
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/component: master
+    app.kubernetes.io/instance: epod-es
+    app.kubernetes.io/name: elasticsearch
+  name: data-epod-es-elasticsearch-master-1
+  namespace: default
+  resourceVersion: "758"
+  uid: 063e86b6-3f30-4a9f-a504-05a62f5cbcdc
+spec:
+  storageClassName: longhorn
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  volumeMode: Filesystem
+status:
+  phase: Pending
