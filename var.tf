@@ -87,3 +87,8 @@ variable "X_TIDENT" {
   type        = string
   description = "SAI Tenant ID"
 }
+
+variable "pod_owner" {
+  type        = string
+  description = "SAI Admin Email Address"
+}

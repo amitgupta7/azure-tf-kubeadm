@@ -1,8 +1,9 @@
 #!/usr/bin/sh
 set -x
-while getopts v:t:h:r:g:k:s:e: flag
+while getopts v:t:h:r:g:k:s:e:o: flag
 do
     case "${flag}" in
+        o) owner=${OPTARG};;    
         v) k8s_version=${OPTARG};;       
         t) authtoken=${OPTARG};;
         h) hostname=${OPTARG};;
@@ -48,7 +49,7 @@ install_master(){
   chown -R $SUDO_UID:$SUDO_UID $kubehome
   kubectl config set-cluster kubernetes --server https://${hostname}:6443  
   curl -L https://kots.io/install | bash
-  sudo -u $SUDO_USER sh appliance_setup.sh -r $region -k $apikey -s $apisecret -t $apitenant
+  sudo -u $SUDO_USER sh appliance_setup.sh -r $region -k $apikey -s $apisecret -t $apitenant -o $owner
 }
 
 install_worker(){

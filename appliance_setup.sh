@@ -1,8 +1,9 @@
 #!/usr/bin/sh
 set -x
-while getopts r:k:s:t: flag
+while getopts r:k:s:t:o: flag
 do
     case "${flag}" in
+        o) owner=${OPTARG};;
         r) region=${OPTARG};;
         k) apikey=${OPTARG};;
         s) apisecret=${OPTARG};;
@@ -34,7 +35,7 @@ curl -s -X 'POST' \
   -H 'X-TIDENT:  '$apitenant \
   -H 'Content-Type: application/json' \
   -d '{
-  "owner": "amit.gupta@securiti.ai",
+  "owner": "'$owner'",
   "co_owners": [],
   "name": "localtest-'$(date +"%s")'",
   "desc": "",

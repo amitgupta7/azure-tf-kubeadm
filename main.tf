@@ -192,7 +192,7 @@ resource "null_resource" "install_dependencies" {
   provisioner "remote-exec" {
     inline = [
       "echo 'source ~/kAlias' >> ~/.bashrc",  
-      "sudo sh /home/${var.azuser}/appliance_init.tpl -v ${var.k8s_version} -t ${local.token} -h ${var.masterIp} -r ${each.value["role"]} -g ${var.location} -k ${var.X_API_Key} -s ${var.X_API_Secret} -e ${var.X_TIDENT} | tee /home/${var.azuser}/install.log"
+      "sudo sh /home/${var.azuser}/appliance_init.tpl -v ${var.k8s_version} -t ${local.token} -h ${var.masterIp} -r ${each.value["role"]} -g ${var.location} -k ${var.X_API_Key} -s ${var.X_API_Secret} -e ${var.X_TIDENT} -o ${var.pod_owner} | tee /home/${var.azuser}/install.log"
      ]
   }
 }
